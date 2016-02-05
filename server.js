@@ -1,7 +1,16 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var _ = require('underscore');
+
 var app = express();
 var PORT = process.env.PORT || 3000;
+
+/* 
+todo = {
+	description = "String",
+	completed = bool
+}
+*/
 var todos = [];
 var todoNextId = 1;
 
@@ -11,16 +20,15 @@ app.use(bodyParser.json());
 app.get('/todos', function (req, res) {
 	res.json(todos);
 });
+
 //GET /todos/:id
 app.get('/todos/:id', function (req, res) {
-	var todoId = req.params.id;
-	var matchingTodo;
-	for (var i = 0; i < todos.length; i++){
-		todo = todos[i]
-		if (todo.id.toString() === todoId) {
-			matchingTodo = todo;
-		};
-	}
+	//parses string to int
+	var todoId = parseInt(req.params.id, 10);
+
+	//http://underscorejs.org/#findWhere
+	var matchingTodo = _.findWhere(todos, {id: todoId});
+
 	if (typeof matchingTodo !== 'undefined') {
 		//res.json(todos[req.params.id]);
 		res.json(matchingTodo);
@@ -28,8 +36,6 @@ app.get('/todos/:id', function (req, res) {
 	else {
 		res.status(404).send();
 	};
-	//iterate over todos to find matching id, else return 404
-	// res.send('Asking for Todo with id of ' + req.params.id);
 	
 });
 
@@ -41,7 +47,14 @@ app.get('/', function (req, res) {
 
 //POST /todos
 app.post('/todos', function (req, res) {
-	var body = req.body;
+	var body = _.pick(req.body, 'description', 'completed');
+	body.description = body.description.trim();
+	//use _.pick to only pick description and completed
+	if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.length === 0) {
+		//request can't be completed bad data ws provided
+		return res.status(400).send();
+	};
+
 	body["id"] = todoNextId;
 	todos.push(body);
 	todoNextId += 1;
