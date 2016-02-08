@@ -16,11 +16,18 @@ var todoNextId = 1;
 
 app.use(bodyParser.json());
 
+//q for descriptipons
+//?q=house
+//?completed=false&q=work
+"Go to work on Saturday".indexOf('work') > -1
+
 // GET /todos
 app.get('/todos', function (req, res) {
 	//http://expressjs.com/en/api.html#req.query
 	var queryParams = req.query;
+	queryParams.q = queryParams.q.toLowerCase()
 	var filteredTodos = todos;
+
 	if (queryParams.hasOwnProperty('completed')) {
 		if (queryParams.completed === "true") {
 			filteredTodos = _.where(filteredTodos, {completed: true});
@@ -28,6 +35,15 @@ app.get('/todos', function (req, res) {
 		else if (queryParams.completed === "false") {
 			filteredTodos = _.where(filteredTodos, {completed: false});
 		};
+	}
+
+	if (queryParams.hasOwnProperty('q') && _.isString(queryParams.q) && queryParams.q.trim().length > 0) {
+		
+		queryTodos = _.filter(filteredTodos, function (todo){
+			var description = todo.description.toLowerCase();
+			return description.indexOf(queryParams.q) > -1;
+		});
+		filteredTodos = queryTodos;
 	}
 
 	res.json(filteredTodos);
@@ -86,9 +102,6 @@ app.delete('/todos/:id', function (req, res) {
 	};
 });
 
-// DELETE /todos/:id
-//	findwhere
-//	update with without
 
 //PUT /todos/:id
 app.put('/todos/:id', function (req, res) {
